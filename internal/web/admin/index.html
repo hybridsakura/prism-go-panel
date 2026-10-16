@@ -1,13 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-color-mode="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RustDesk 管理后台</title>
+  <script>
+    // 主题初始化（避免闪烁）：localStorage 优先，其次系统偏好
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem('rd-color-mode'); } catch (e) {}
+      var mode = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-color-mode', mode);
+    })();
+  </script>
   <link rel="stylesheet" href="/admin/style.css">
 </head>
 <body>
   <div id="app"></div>
+  <div class="flash-area" id="flash-area"></div>
   <script src="/admin/app.js"></script>
 </body>
 </html>

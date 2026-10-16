@@ -226,6 +226,19 @@ POST /api/audit
 | `DELETE /admin/api/users/{id}` | 删除用户（不能删自己） |
 | `POST /admin/api/users/{id}/password` | `{password}` 重置密码 |
 
+### 服务端配置档案（仅管理员）
+
+用于对接 hbbs/hbbr 部署信息并生成客户端配置；档案只是「记录」，不会改动 hbbs/hbbr 运行参数。
+
+| 接口 | 说明 |
+|---|---|
+| `GET /admin/api/server-profile` | 读取档案 `{id_server, relay_server, api_server, key, updated_at, suggested_id_server, detected_key?}`；`detected_key` 仅在配置了 `HBBS_KEY_FILE` 且档案无 key 时返回 |
+| `PUT /admin/api/server-profile` | 保存档案 `{id_server, relay_server, api_server, key}`；地址为 `host[:port]`，校验失败返回 `code:0` |
+| `POST /admin/api/server-profile/check` | 连通性自检：按档案推导端口并 TCP 探测（UDP 跳过）→ `{results: [{name, addr, ok, latency, error}]}` |
+| `GET /admin/api/server-profile/client-config` | 生成客户端配置：`filename`（重命名串）、`filename_elevate`（`,-qs` 提权变体）、`manual`（手填四项）、`ports`（端口放行清单，按 hbbs 基准端口 -1/+0/+2、hbbr +0/+2 推导）、`custom_build`（Actions 编译 secrets）、`notes` |
+
+端口推导规则：hbbs 以 ID 服务器端口（默认 21116）为基准：TCP `p-1`（NAT 测试）/`p`（注册心跳）/`p+2`（WS 信令），UDP `p`；hbbr 以中继端口（默认 21117）为基准：TCP `q`/`q+2`；API 默认 21114。
+
 ---
 
 ## 三、其他

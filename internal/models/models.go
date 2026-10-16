@@ -104,3 +104,17 @@ type ShareLink struct {
 	IsExpired  bool      `gorm:"default:false;index"`
 	CreateTime time.Time `gorm:"autoCreateTime"`
 }
+
+// ServerProfile 服务端配置档案（单行，ID 恒为 1）：
+// 记录 hbbs/hbbr 的部署信息，用于在管理后台生成客户端配置
+// （重命名安装包、--config 导入串、手动填写说明）。
+// 注意：这是「档案」，修改它不会改变 hbbs/hbbr 的实际运行参数——
+// 那些由 hbbs/hbbr 的启动参数决定；此处记录的值应与实际部署保持一致。
+type ServerProfile struct {
+	ID          uint      `gorm:"primaryKey"`
+	IDServer    string    `gorm:"size:200"` // ID/信令服务器（hbbs），host[:port]，默认端口 21116
+	RelayServer string    `gorm:"size:200"` // 中继服务器（hbbr），host[:port]，默认同 ID 服务器、端口 21117
+	APIServer   string    `gorm:"size:200"` // 本 API 服务对外地址，host[:port]，默认端口 21114
+	Key         string    `gorm:"size:200"` // 服务端公钥（id_ed25519.pub 内容）
+	UpdatedAt   time.Time `gorm:"autoUpdateTime"`
+}

@@ -65,6 +65,12 @@ func (s *Server) Routes() http.Handler {
 				r.Post("/api/users", s.handleUserCreate)
 				r.Delete("/api/users/{id}", s.handleUserDelete)
 				r.Post("/api/users/{id}/password", s.handleUserResetPassword)
+
+				// 服务端配置档案（对接 hbbs/hbbr 部署信息 + 客户端配置生成）
+				r.Get("/api/server-profile", s.handleProfileGet)
+				r.Put("/api/server-profile", s.handleProfilePut)
+				r.Post("/api/server-profile/check", s.handleProfileCheck)
+				r.Get("/api/server-profile/client-config", s.handleClientConfig)
 			})
 		})
 
