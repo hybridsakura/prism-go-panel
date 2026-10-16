@@ -1,0 +1,18 @@
+# 数据目录
+/data/
+*.db
+*.db-wal
+*.db-shm
+
+# 构建产物
+/rustdesk-api-server
+/rustdesk-api-server.exe
+/rustdesk-api-go.exe
+/dist/
+
+# Web 控制端静态资源（按需从 Python 参考版拷贝）
+/webui-dist/
+
+# IDE
+.idea/
+.vscode/

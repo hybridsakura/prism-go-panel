@@ -1,0 +1,14 @@
+.git
+.github
+data
+*.db
+*.db-wal
+*.db-shm
+rustdesk-api-server
+rustdesk-api-server.exe
+webui-dist
+docs
+*.md
+Dockerfile
+docker-compose.yml
+.dockerignore

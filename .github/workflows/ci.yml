@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+          cache: true
+
+      - name: gofmt
+        run: test -z "$(gofmt -l .)"
+
+      - name: go vet
+        run: go vet ./...
+
+      # ubuntu 镜像自带 gcc，可开启竞态检测（Windows 本机无 gcc 跑不了 -race）
+      - name: go test (with race detector)
+        run: go test -race ./...
+
+      - name: cross-compile smoke (5 targets)
+        run: |
+          set -e
+          for t in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            echo "==> $t"
+            CGO_ENABLED=0 GOOS=${t%/*} GOARCH=${t#*/} go build ./...
+          done

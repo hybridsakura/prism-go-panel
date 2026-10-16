@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Remote Desktop.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="RustDesk">
+  <link rel="icon" type="image/svg+xml" href="/webui/favicon.svg">
+  <title>RustDesk Web 桌面</title>
+  <script src="/webui/ogvjs-1.8.6/ogv.js"></script>
+  <script>
+      var api = [{{API_SERVERS}}];
+  </script>
+  <script type="module" crossorigin src="/webui/module/{{ENTRY_JS}}"></script>
+  <script src="/webui/js/yuv-canvas-1.2.6.js"></script>
+  <style>
+    .loading {
+      display: flex; justify-content: center; align-items: center;
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); color: #888; font: 14px sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading">正在加载 RustDesk Web 控制端…</div>
+</body>
+</html>
