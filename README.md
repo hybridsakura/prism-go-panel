@@ -21,6 +21,17 @@
 | 数据库 | SQLite / MySQL | SQLite（WAL，纯 Go 驱动，免 CGO）/ MySQL |
 | 部署 | Python 环境 + 依赖安装 | 单文件二进制 / Docker 镜像 / Windows 安装包 |
 
+## 相比原项目新增的功能
+
+在保持客户端 API 契约兼容的基础上，本 Go 版还额外增加了以下原项目不具备的能力：
+
+- **服务端配置档案**（管理员）：在后台记录 hbbs/hbbr 的部署信息（地址、自定义端口、公钥），据此一键生成客户端配置——Windows 重命名串（`rustdesk-host=...,key=....exe` 及 `,-qs` 自动提权变体）、客户端手动填写对照、防火墙端口放行清单、GitHub Actions 编译专属客户端所需 secrets，并提供端口**连通性自检**
+- **管理后台整体重设计**：GitHub Primer 风格 UI，浅色 / 深色双主题（跟随系统 + 手动切换），无外部依赖、内嵌于单个二进制
+- **Windows 独立安装包**：注册为原生系统服务（开机自启、优雅启停），一键安装 / 卸载脚本
+- **一键导出全部设备资产为 Excel（xlsx）**
+- **GitHub Actions 全自动 CI/CD**：push 即跑 `gofmt`/`vet`/`test -race`/多平台交叉编译；打 `v*` tag 自动发布多平台产物与多架构 Docker 镜像（ghcr.io）
+- **运维加固**：优雅退出、panic 恢复、请求体大小限制、结构化日志（slog，可落文件）、`/healthz` 健康检查、可选登录限速
+
 ## 功能特性
 
 - **RustDesk 客户端契约**（`/api/*`）：登录/登出、当前用户、地址簿读写（含旧版 sciter 客户端）、设备资产上报（sysinfo）、心跳与 token 保活、连接/文件审计日志
@@ -193,6 +204,7 @@ packaging/
 | AI | 参与时间 | 参与环节 |
 |---|---|---|
 | Kimi K3（月之暗面 Moonshot AI，经由 WorkBuddy 编程助手） | 2026-10 | 原项目调研与 API 契约梳理、架构设计、全部 Go 代码编写、测试体系建设、文档撰写、打包与发布配置 |
+| DeepSeek-V4-Pro（深度求索 DeepSeek，经由 WorkBuddy 编程助手） | 2026-10 | 服务端配置档案（对接 hbbs/hbbr）与客户端配置生成、管理后台 GitHub Primer 风格 UI 重写（浅色/深色双主题）、测试与发布维护 |
 
 > 如后续维护中有其他 AI 工具参与，请在此表中补充记录，保持透明。
 
