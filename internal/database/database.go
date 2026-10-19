@@ -96,6 +96,7 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		&models.FileLog{},
 		&models.ShareLink{},
 		&models.ServerProfile{},
+		&models.IDConflict{},
 	); err != nil {
 		return nil, fmt.Errorf("数据库迁移失败: %w", err)
 	}

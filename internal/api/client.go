@@ -89,6 +89,17 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ID 冲突拦截：同一远程 ID 被多台机器共用时，客户端会弹出
+	// 「无法验证端到端加密」。这里只拦「非原机」的一方（身份不同），
+	// 提示其更换 ID；原机始终放行，避免误伤。
+	if s.cfg.IDConflictEnforce {
+		if c, ok := s.findConflict(req.ID); ok && c.PrimaryUUID != "" && req.UUID != "" && req.UUID != c.PrimaryUUID {
+			_ = s.db.Model(c).UpdateColumn("blocked", c.Blocked+1).Error
+			apiError(w, conflictMessage(c))
+			return
+		}
+	}
+
 	deviceInfo := "{}"
 	if len(req.DeviceInfo) > 0 {
 		deviceInfo = string(req.DeviceInfo)
@@ -361,6 +372,18 @@ func (s *Server) handleSysinfo(w http.ResponseWriter, r *http.Request) {
 	if req.ID == "" || req.UUID == "" {
 		apiError(w, "参数不完整")
 		return
+	}
+	// ID 冲突检测：同一 RID 曾以不同主机名/不同 UUID 上报过
+	var seen []models.Device
+	_ = s.db.Where("rid = ?", req.ID).Find(&seen).Error
+	if len(seen) > 0 {
+		hostnames := []string{req.Hostname}
+		uuids := []string{req.UUID}
+		for _, d := range seen {
+			hostnames = append(hostnames, d.Hostname)
+			uuids = append(uuids, d.UUID)
+		}
+		s.recordIDConflict(req.ID, hostnames, uuids)
 	}
 	now := time.Now()
 	dev := models.Device{

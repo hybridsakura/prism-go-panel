@@ -88,6 +88,7 @@ const routes = {
   '/conn-logs': viewConnLogs,
   '/file-logs': viewFileLogs,
   '/share': viewShare,
+  '/conflicts': viewConflicts,
   '/server': viewServer,
   '/users': viewUsers,
 };
@@ -97,6 +98,7 @@ const NAV_ITEMS = [
   ['#/conn-logs', '连接日志'],
   ['#/file-logs', '文件日志'],
   ['#/share', '分享'],
+  ['#/conflicts', 'ID 冲突', true],
   ['#/server', '服务端配置', true],
   ['#/users', '用户', true],
 ];
@@ -419,6 +421,54 @@ async function viewShare(main) {
     else flash(data.msg || '领取失败', 'error');
     document.getElementById('claim-hash').value = '';
   };
+}
+
+/* ---------- 视图：ID 冲突（管理员） ---------- */
+
+async function viewConflicts(main) {
+  const data = await api('/admin/api/id-conflicts');
+  main.innerHTML = `
+    <div class="pagehead"><h1>ID 冲突</h1><span class="hint">同一远程 ID 被多台机器占用（硬盘克隆后遗症）</span></div>
+    <div class="box">
+      <div class="box-body">
+        <p style="color:var(--fg-muted);font-size:13px;margin:0">
+          同一个远程 ID 被两台机器共用时，hbbs 只能保存其中一台的公钥，另一台连接时会提示
+          「无法验证端到端加密」。下表是系统检测到的冲突；冲突机器登录时会收到更换 ID 的提示。
+        </p>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>远程 ID</th><th>原机</th><th>涉及主机名</th><th>观察次数</th><th>已拦截登录</th><th>最近发现</th><th>操作</th></tr></thead>
+        <tbody>${data.items.length ? data.items.map(c => `
+          <tr>
+            <td class="mono">${esc(c.rid)}</td>
+            <td>${esc(c.primary_hostname) || '-'}</td>
+            <td>${c.hostnames.map(h => `<span class="tag">${esc(h)}</span>`).join('')}</td>
+            <td>${c.observations}</td>
+            <td>${c.blocked}</td>
+            <td>${fmtTime(c.last_seen)}</td>
+            <td><button class="btn btn-sm" data-clear="${esc(c.rid)}">清除记录</button></td>
+          </tr>`).join('') : '<tr><td colspan="7" class="empty">暂无冲突 — 目前没有发现重复的远程 ID</td></tr>'}</tbody>
+      </table></div>
+    </div>
+    <div class="box">
+      <div class="box-header">处理方式<span class="sub">给现场同事的操作指引</span></div>
+      <div class="box-body">
+        <ul class="note-list">
+          <li>在被克隆的机器上打开 RustDesk → 设置 → ID → 「更改 ID」，生成新的唯一 ID。</li>
+          <li>改完后重新登录；确认无误后可在上表点「清除记录」（原机会一直放行，无需处理）。</li>
+          <li>批量装机建议装完后统一清理 RustDesk 配置里的 ID 字段，避免多台机器共用同一 ID。</li>
+        </ul>
+      </div>
+    </div>`;
+
+  document.querySelectorAll('[data-clear]').forEach(b => {
+    b.onclick = async () => {
+      if (!confirm('确认清除该远程 ID 的冲突记录？')) return;
+      const r = await api('/admin/api/id-conflicts/' + encodeURIComponent(b.dataset.clear), { method: 'DELETE' });
+      if (r.code === 1) { flash('已清除', 'success'); viewConflicts(main); }
+      else flash(r.msg || '清除失败', 'error');
+    };
+  });
 }
 
 /* ---------- 视图：用户管理（管理员） ---------- */

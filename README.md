@@ -44,6 +44,7 @@
   - 分享链接管理（生成 / 领取，15 分钟有效，一次性）
   - 用户管理（管理员）：创建、删除、重置密码、管理员授权
   - **服务端配置档案**（管理员）：记录 hbbs/hbbr 部署信息（地址、自定义端口、公钥），一键生成客户端配置（Windows 重命名串 / 手动填写 / 端口放行清单 / Actions 编译 secrets），并提供端口连通性自检
+  - **ID 冲突检测**（管理员）：同一远程 ID 被多台机器占用（硬盘克隆后遗症）时自动识别，向冲突方推送「请更换 ID」提示，避免远程连接出现「无法验证端到端加密」
 - **RustDesk Web 控制端**（`/webui`，可选）：托管 Flutter 编译产物，与原项目目录结构一致
 - **运维特性**：优雅退出（含 Windows 服务 SCM 启停）、panic 恢复、请求体大小限制、结构化日志（slog，支持输出到文件）、`/healthz` 健康检查、可选登录限速
 
@@ -137,6 +138,7 @@ RustDesk 客户端
 | `WEBCLIENT_DIR` | `./webui-dist` | Web 控制端静态目录 |
 | `ID_SERVER` | 空（取请求主机） | Web 控制端使用的 ID 服务器 |
 | `HBBS_KEY_FILE` | 空 | hbbs 的 `id_ed25519.pub` 路径（一体部署时挂载 hbbs 目录），后台可自动填入公钥 |
+| `ID_CONFLICT_ENFORCE` | `true` | 检测到远程 ID 重复时，拒绝「非原机」登录并提示更换 ID；设为 `false` 仅记录不拦截 |
 | `LOG_LEVEL` | `info` | 日志级别（`RUST_LOG` 为兼容别名） |
 | `LOG_FILE` | 空（标准输出） | 日志文件路径，Windows 服务模式建议配置 |
 
@@ -149,7 +151,15 @@ RustDesk 客户端
 ## 从 Python 版迁移
 
 - 数据库**不通用**（Django schema 不同），Go 版使用独立的 `rustdesk-api.db`
-- 用户需重新注册；第一个注册的用户自动成为管理员（与原项目一致）
+- 内置迁移工具可导入旧版的用户、设备资产与日志（**密码哈希直接复用，用户可继续用原密码登录**）：
+
+```bash
+# 先停掉 API 容器，把旧库和本服务数据库放在同一台机器上
+./legacy-import -src /path/to/old/db.sqlite3 -dst /path/to/rustdesk-api.db --dry-run  # 先预览
+./legacy-import -src /path/to/old/db.sqlite3 -dst /path/to/rustdesk-api.db
+```
+
+- 若不想迁移，也可让用户重新注册；第一个注册的用户自动成为管理员（与原项目一致）
 - 客户端无需任何改动，API 地址与端口不变
 
 ## 与 Python 原项目的行为差异

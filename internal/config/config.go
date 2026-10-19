@@ -26,6 +26,7 @@ type Config struct {
 	LogLevel          string        // 日志级别：debug/info/warn/error，默认 info
 	LogFile           string        // 日志文件路径，空则输出到标准输出（服务模式建议配置）
 	HBBSKeyFile       string        // hbbs 公钥文件（id_ed25519.pub）路径，用于后台自动填入公钥
+	IDConflictEnforce bool          // 检测到远程 ID 重复时拒绝登录并提示更换（默认 true）
 }
 
 // Load 从环境变量读取配置，未设置时使用默认值。
@@ -47,6 +48,7 @@ func Load() *Config {
 		LogLevel:          getenv("LOG_LEVEL", getenv("RUST_LOG", "info")), // RUST_LOG 为兼容别名
 		LogFile:           getenv("LOG_FILE", ""),
 		HBBSKeyFile:       getenv("HBBS_KEY_FILE", ""),
+		IDConflictEnforce: getenv("ID_CONFLICT_ENFORCE", "true") != "false",
 	}
 }
 

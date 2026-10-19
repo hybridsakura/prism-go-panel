@@ -71,6 +71,10 @@ func (s *Server) Routes() http.Handler {
 				r.Put("/api/server-profile", s.handleProfilePut)
 				r.Post("/api/server-profile/check", s.handleProfileCheck)
 				r.Get("/api/server-profile/client-config", s.handleClientConfig)
+
+				// ID 冲突（重复远程 ID）检测结果
+				r.Get("/api/id-conflicts", s.handleIDConflicts)
+				r.Delete("/api/id-conflicts/{rid}", s.handleIDConflictDelete)
 			})
 		})
 

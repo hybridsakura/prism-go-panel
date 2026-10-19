@@ -118,3 +118,21 @@ type ServerProfile struct {
 	Key         string    `gorm:"size:200"` // 服务端公钥（id_ed25519.pub 内容）
 	UpdatedAt   time.Time `gorm:"autoUpdateTime"`
 }
+
+// IDConflict 远程 ID 冲突记录：同一个 RID 被不同的物理机/系统使用
+// （典型来源：硬盘拷贝机克隆系统，把 RustDesk 配置连同 ID 一起复制）。
+// 后果是两台机器争抢同一个 ID：hbbs 只保存其中一个公钥，
+// 另一台连接时签名校验失败，客户端弹出「无法验证端到端加密」。
+// 这里记录了观察到的不同主机名/UUID，用于阻止登录并提示用户更换 ID。
+type IDConflict struct {
+	ID              uint      `gorm:"primaryKey"`
+	RID             string    `gorm:"column:rid;size:60;uniqueIndex"`
+	Hostnames       string    `gorm:"size:500"`  // JSON 数组：观察到的不同主机名
+	UUIDs           string    `gorm:"size:800"`  // JSON 数组：观察到的不同 UUID
+	PrimaryUUID     string    `gorm:"size:100"`  // 最早注册机器的 UUID（原机，登录放行）
+	PrimaryHostname string    `gorm:"size:100"`  // 最早注册机器的主机名
+	Observations    int       `gorm:"default:1"` // 冲突观察次数
+	Blocked         int       `gorm:"default:0"` // 已拒绝登录（提示更换 ID）次数
+	FirstSeen       time.Time `gorm:"autoCreateTime"`
+	LastSeen        time.Time `gorm:"autoUpdateTime;index"`
+}
