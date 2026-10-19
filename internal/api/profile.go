@@ -12,7 +12,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"rustdesk-api-go/internal/models"
+	"github.com/hybridsakura/prism-go-panel/internal/models"
 )
 
 // 默认端口约定（与官方 rustdesk-server 一致）：

@@ -14,10 +14,10 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"rustdesk-api-go/internal/auth"
-	"rustdesk-api-go/internal/config"
-	"rustdesk-api-go/internal/models"
-	"rustdesk-api-go/internal/stats"
+	"github.com/hybridsakura/prism-go-panel/internal/auth"
+	"github.com/hybridsakura/prism-go-panel/internal/config"
+	"github.com/hybridsakura/prism-go-panel/internal/models"
+	"github.com/hybridsakura/prism-go-panel/internal/stats"
 )
 
 // sessionCookieName 管理后台会话 Cookie 名称。

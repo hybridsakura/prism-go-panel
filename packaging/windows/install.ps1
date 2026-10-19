@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-  Install rustdesk-api-server as a Windows service.
+  Install prism-go-panel as a Windows service.
 
 .DESCRIPTION
   Copies the binary to the install directory, registers a Windows service
@@ -13,22 +13,22 @@
   powershell -ExecutionPolicy Bypass -File install.ps1 -Port 21114 -AdminUser admin -AdminPass 'StrongPass!2026'
 #>
 param(
-    [string]$InstallDir = "C:\Program Files\rustdesk-api",
-    [string]$DataDir    = "C:\ProgramData\rustdesk-api",
+    [string]$InstallDir = "C:\Program Files\prism-go-panel",
+    [string]$DataDir    = "C:\ProgramData\prism-go-panel",
     [int]$Port          = 21114,
     [string]$AdminUser  = "",
     [string]$AdminPass  = ""
 )
 $ErrorActionPreference = "Stop"
-$svcName = "rustdesk-api"
+$svcName = "prism-go-panel"
 
-$srcExe = Join-Path $PSScriptRoot "rustdesk-api-server-windows-amd64.exe"
+$srcExe = Join-Path $PSScriptRoot "prism-go-panel-windows-amd64.exe"
 if (-not (Test-Path $srcExe)) { throw "Binary not found next to this script: $srcExe" }
 
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 New-Item -ItemType Directory -Force -Path $DataDir    | Out-Null
 
-$dstExe = Join-Path $InstallDir "rustdesk-api-server.exe"
+$dstExe = Join-Path $InstallDir "prism-go-panel.exe"
 Copy-Item $srcExe $dstExe -Force
 
 # Replace an existing installation cleanly.
@@ -47,8 +47,8 @@ if ($LASTEXITCODE -ne 0) { throw "sc.exe create failed with code $LASTEXITCODE" 
 $svcEnv = @(
     "HOST=0.0.0.0",
     "PORT=$Port",
-    "DB_URL=$DataDir\rustdesk-api.db",
-    "LOG_FILE=$DataDir\rustdesk-api.log",
+    "DB_URL=$DataDir\prism.db",
+    "LOG_FILE=$DataDir\prism-go-panel.log",
     "ALLOW_REGISTRATION=true"
 )
 if ($AdminUser -ne "" -and $AdminPass -ne "") {
@@ -66,7 +66,7 @@ Write-Output "Service name : $svcName"
 Write-Output "Status       : $($svc.Status)"
 Write-Output "Admin console: http://<this-machine>:$Port/admin"
 Write-Output "Data dir     : $DataDir"
-Write-Output "Log file     : $DataDir\rustdesk-api.log"
+Write-Output "Log file     : $DataDir\prism-go-panel.log"
 if ($AdminUser -eq "") {
     Write-Output "No initial admin was preset. Register the first account at /admin - it becomes the administrator."
 }

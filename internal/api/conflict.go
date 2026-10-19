@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"rustdesk-api-go/internal/models"
+	"github.com/hybridsakura/prism-go-panel/internal/models"
 )
 
 // ID 冲突检测

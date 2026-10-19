@@ -34,7 +34,7 @@ func Load() *Config {
 	return &Config{
 		Host:              getenv("HOST", "0.0.0.0"),
 		Port:              getenvInt("PORT", 21114),
-		DBURL:             getenv("DB_URL", "./rustdesk-api.db"),
+		DBURL:             getenv("DB_URL", "./prism.db"),
 		SecretKey:         getenv("SECRET_KEY", ""),
 		AllowRegistration: getenvBool("ALLOW_REGISTRATION", true),
 		IDServers:         splitList(os.Getenv("ID_SERVER")),

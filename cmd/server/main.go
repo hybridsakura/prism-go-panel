@@ -1,4 +1,4 @@
-// Command rustdesk-api-server 是 RustDesk API 服务器的 Go 实现，
+// Command prism-go-panel 是 RustDesk API 服务器的 Go 实现，
 // 参照 kingmo888/rustdesk-api-server（Python/Django）重写，客户端 API 契约保持一致。
 //
 // 提供服务：
@@ -21,11 +21,11 @@ import (
 
 	"gorm.io/gorm"
 
-	"rustdesk-api-go/internal/api"
-	"rustdesk-api-go/internal/auth"
-	"rustdesk-api-go/internal/config"
-	"rustdesk-api-go/internal/database"
-	"rustdesk-api-go/internal/stats"
+	"github.com/hybridsakura/prism-go-panel/internal/api"
+	"github.com/hybridsakura/prism-go-panel/internal/auth"
+	"github.com/hybridsakura/prism-go-panel/internal/config"
+	"github.com/hybridsakura/prism-go-panel/internal/database"
+	"github.com/hybridsakura/prism-go-panel/internal/stats"
 )
 
 func main() {
@@ -91,7 +91,7 @@ func serve() int {
 	go maintain(ctx, db, tokens, sessions, tracker)
 
 	go func() {
-		slog.Info("rustdesk-api-server 已启动",
+		slog.Info("prism-go-panel 已启动",
 			"addr", httpSrv.Addr,
 			"db", cfg.DBURL,
 			"admin", "http://"+httpSrv.Addr+"/admin")

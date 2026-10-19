@@ -1,5 +1,9 @@
-# rustdesk-api-go
+# Prism-Go-Panel（`prism-go-panel`）
 
+> **命名与商标声明**：本项目以 **Prism-Go-Panel** 名义发布，与 RustDesk 官方及其商业公司**无任何隶属或背书关系**。项目名称、镜像名与产物名均不含第三方商标，以避免商标纠纷；代码中出现的 "RustDesk" 仅用于说明协议对象与兼容目标（指代客户端软件本身）。
+>
+> **署名**：`com.akiraprism`
+>
 > **项目声明**：本项目是对原项目 [kingmo888/rustdesk-api-server](https://github.com/kingmo888/rustdesk-api-server)（Python/Django 实现）的 **Go 语言重构版**，目的是在保持客户端 API 契约完全一致的前提下获得更高的性能与更简单的部署。感谢原作者 kingmo888 及原项目社区贡献者的工作。
 >
 > **AI 声明**：本项目的构建过程有 AI 助手参与，具体见文末 [AI 协作声明](#ai-协作声明)。
@@ -53,13 +57,13 @@
 ### Docker（Linux 生产环境，推荐）
 
 ```bash
-docker build -t rustdesk-api-go .
-docker run -d --name rustdesk-api \
+docker build -t github.com/hybridsakura/prism-go-panel .
+docker run -d --name prism-go-panel \
   -p 21114:21114 \
   -e ADMIN_USER=admin -e ADMIN_PASS=change-me-please \
   -e ALLOW_REGISTRATION=true \
   -v ./data:/data \
-  rustdesk-api-go
+  github.com/hybridsakura/prism-go-panel
 ```
 
 或使用 docker-compose：
@@ -71,7 +75,7 @@ docker compose up -d
 打 tag 后 GitHub Actions 会自动构建并推送多架构镜像（linux/amd64、linux/arm64）到 `ghcr.io`，届时可直接：
 
 ```bash
-docker pull ghcr.io/<你的用户名>/rustdesk-api-go:latest
+docker pull ghcr.io/<你的用户名>/github.com/hybridsakura/prism-go-panel:latest
 ```
 
 ### Linux 二进制
@@ -79,20 +83,20 @@ docker pull ghcr.io/<你的用户名>/rustdesk-api-go:latest
 从 Releases 下载对应架构的 tar.gz，解压后直接运行：
 
 ```bash
-./rustdesk-api-server
+./prism-go-panel
 # 配合 systemd 时可参考 packaging/ 或自行编写 unit 文件
 ```
 
 ### Windows 安装包
 
-从 Releases 下载 `rustdesk-api-server-windows-amd64.zip`，解压后以**管理员身份**运行：
+从 Releases 下载 `prism-go-panel-windows-amd64.zip`，解压后以**管理员身份**运行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File install.ps1
 # 可选：powershell -ExecutionPolicy Bypass -File install.ps1 -AdminUser admin -AdminPass 'StrongPass!2026'
 ```
 
-安装程序会把服务注册为 Windows 服务（`rustdesk-api`，开机自启），数据与日志默认位于 `C:\ProgramData\rustdesk-api`。
+安装程序会把服务注册为 Windows 服务（`prism-go-panel`，开机自启），数据与日志默认位于 `C:\ProgramData\prism-go-panel`。
 卸载：`uninstall.ps1`（默认保留数据，加 `-RemoveData` 一并清除）。
 
 ### 源码运行
@@ -128,7 +132,7 @@ RustDesk 客户端
 | 变量 | 默认值 | 说明 |
 |---|---|---|
 | `HOST` / `PORT` | `0.0.0.0` / `21114` | 监听地址与端口（沿用原项目端口） |
-| `DB_URL` | `./rustdesk-api.db` | SQLite 路径（支持 `file:` URI）或 MySQL DSN |
+| `DB_URL` | `./prism.db` | SQLite 路径（支持 `file:` URI）或 MySQL DSN |
 | `ALLOW_REGISTRATION` | `true` | 是否开放网页自助注册 |
 | `ADMIN_USER` / `ADMIN_PASS` | 空 | 初始管理员（仅空库时创建） |
 | `TOKEN_TTL_SECONDS` | `7200` | access_token 有效期，心跳续期 |
@@ -150,13 +154,13 @@ RustDesk 客户端
 
 ## 从 Python 版迁移
 
-- 数据库**不通用**（Django schema 不同），Go 版使用独立的 `rustdesk-api.db`
+- 数据库**不通用**（Django schema 不同），Go 版使用独立的 `prism.db`
 - 内置迁移工具可导入旧版的用户、设备资产与日志（**密码哈希直接复用，用户可继续用原密码登录**）：
 
 ```bash
 # 先停掉 API 容器，把旧库和本服务数据库放在同一台机器上
-./legacy-import -src /path/to/old/db.sqlite3 -dst /path/to/rustdesk-api.db --dry-run  # 先预览
-./legacy-import -src /path/to/old/db.sqlite3 -dst /path/to/rustdesk-api.db
+./legacy-import -src /path/to/old/db.sqlite3 -dst /path/to/prism.db --dry-run  # 先预览
+./legacy-import -src /path/to/old/db.sqlite3 -dst /path/to/prism.db
 ```
 
 - 若不想迁移，也可让用户重新注册；第一个注册的用户自动成为管理员（与原项目一致）

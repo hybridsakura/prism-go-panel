@@ -18,34 +18,34 @@ build() { # GOOS GOARCH 输出名
     CGO_ENABLED=0 GOOS="$1" GOARCH="$2" go build -trimpath -ldflags="$LDFLAGS" -o "$3" ./cmd/server
 }
 
-build linux   amd64 "$DIST/rustdesk-api-server-linux-amd64"
-build linux   arm64 "$DIST/rustdesk-api-server-linux-arm64"
-build darwin  amd64 "$DIST/rustdesk-api-server-darwin-amd64"
-build darwin  arm64 "$DIST/rustdesk-api-server-darwin-arm64"
-build windows amd64 "$DIST/rustdesk-api-server-windows-amd64.exe"
+build linux   amd64 "$DIST/prism-go-panel-linux-amd64"
+build linux   arm64 "$DIST/prism-go-panel-linux-arm64"
+build darwin  amd64 "$DIST/prism-go-panel-darwin-amd64"
+build darwin  arm64 "$DIST/prism-go-panel-darwin-arm64"
+build windows amd64 "$DIST/prism-go-panel-windows-amd64.exe"
 
 # Unix 平台打 tar.gz（内含二进制 + README + 文档）
 for target in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
     stage="$DIST/pkg-$target"
     mkdir -p "$stage"
-    cp "$DIST/rustdesk-api-server-$target" "$stage/rustdesk-api-server"
+    cp "$DIST/prism-go-panel-$target" "$stage/prism-go-panel"
     cp README.md "$stage/"
     cp -r docs "$stage/"
-    (cd "$stage" && tar -czf "$DIST/rustdesk-api-server-$target.tar.gz" .)
+    (cd "$stage" && tar -czf "$DIST/prism-go-panel-$target.tar.gz" .)
     rm -rf "$stage"
 done
 
 # Windows 安装包：二进制 + 安装/卸载脚本 + 说明
 WINPKG="$DIST/windows-pkg"
 mkdir -p "$WINPKG"
-cp "$DIST/rustdesk-api-server-windows-amd64.exe" "$WINPKG/"
+cp "$DIST/prism-go-panel-windows-amd64.exe" "$WINPKG/"
 cp packaging/windows/install.ps1 packaging/windows/uninstall.ps1 packaging/windows/README.txt "$WINPKG/"
 if command -v zip >/dev/null 2>&1; then
-    (cd "$WINPKG" && zip -q -r "$DIST/rustdesk-api-server-windows-amd64.zip" .)
+    (cd "$WINPKG" && zip -q -r "$DIST/prism-go-panel-windows-amd64.zip" .)
 else
     # Git Bash on Windows 通常没有 zip，回退到 PowerShell Compress-Archive（注意路径需转为 Windows 格式）
     WINPKG_WIN="$(cygpath -w "$WINPKG")"
-    ZIP_WIN="$(cygpath -w "$DIST/rustdesk-api-server-windows-amd64.zip")"
+    ZIP_WIN="$(cygpath -w "$DIST/prism-go-panel-windows-amd64.zip")"
     powershell -NoProfile -Command "Compress-Archive -Path '${WINPKG_WIN}\\*' -DestinationPath '${ZIP_WIN}' -Force"
 fi
 rm -rf "$WINPKG"

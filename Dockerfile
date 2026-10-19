@@ -11,13 +11,13 @@ RUN go mod download
 COPY . .
 # 纯 Go 编译（SQLite 驱动为纯 Go 实现，无需 CGO）
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
-    -o /out/rustdesk-api-server ./cmd/server
+    -o /out/prism-go-panel ./cmd/server
 
 # ---------- 运行阶段 ----------
 FROM alpine:3.21
 RUN apk add --no-cache ca-certificates tzdata
 
-COPY --from=build /out/rustdesk-api-server /usr/local/bin/rustdesk-api-server
+COPY --from=build /out/prism-go-panel /usr/local/bin/prism-go-panel
 
 # 数据目录（SQLite）与可选的 Web 控制端目录
 RUN mkdir -p /data /webui-dist
@@ -25,7 +25,7 @@ VOLUME ["/data"]
 
 ENV HOST=0.0.0.0 \
     PORT=21114 \
-    DB_URL=/data/rustdesk-api.db \
+    DB_URL=/data/prism.db \
     TZ=Asia/Shanghai
 
 EXPOSE 21114/tcp
@@ -33,4 +33,4 @@ EXPOSE 21114/tcp
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
     CMD wget -qO- http://127.0.0.1:21114/healthz || exit 1
 
-ENTRYPOINT ["rustdesk-api-server"]
+ENTRYPOINT ["prism-go-panel"]

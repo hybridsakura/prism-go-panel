@@ -3,7 +3,7 @@
 //
 // 用法：
 //
-//	legacy-import -src /path/to/old/db.sqlite3 -dst /path/to/rustdesk-api.db [-dry-run]
+//	legacy-import -src /path/to/old/db.sqlite3 -dst /path/to/prism.db [-dry-run]
 //
 // 密码哈希为 Django 的 pbkdf2_sha256，本服务已兼容校验，用户可继续用原密码登录。
 package main
@@ -24,7 +24,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"rustdesk-api-go/internal/models"
+	"github.com/hybridsakura/prism-go-panel/internal/models"
 )
 
 type legacyUser struct {
@@ -57,7 +57,7 @@ type legacyDevice struct {
 
 func main() {
 	src := flag.String("src", "", "旧版 Django 数据库路径（db.sqlite3）")
-	dst := flag.String("dst", "", "本服务数据库路径（rustdesk-api.db）")
+	dst := flag.String("dst", "", "本服务数据库路径（prism.db）")
 	dryRun := flag.Bool("dry-run", false, "只统计不写入")
 	flag.Parse()
 	if *src == "" || *dst == "" {

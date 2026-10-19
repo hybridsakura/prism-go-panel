@@ -9,7 +9,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"rustdesk-api-go/internal/models"
+	"github.com/hybridsakura/prism-go-panel/internal/models"
 )
 
 // ErrInvalidToken 表示 token 不存在或已过期。

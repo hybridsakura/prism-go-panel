@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"rustdesk-api-go/internal/auth"
-	"rustdesk-api-go/internal/config"
-	"rustdesk-api-go/internal/database"
-	"rustdesk-api-go/internal/stats"
+	"github.com/hybridsakura/prism-go-panel/internal/auth"
+	"github.com/hybridsakura/prism-go-panel/internal/config"
+	"github.com/hybridsakura/prism-go-panel/internal/database"
+	"github.com/hybridsakura/prism-go-panel/internal/stats"
 )
 
 // newTestServer 构建带临时 SQLite 数据库的完整服务。

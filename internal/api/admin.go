@@ -10,8 +10,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 
-	"rustdesk-api-go/internal/auth"
-	"rustdesk-api-go/internal/models"
+	"github.com/hybridsakura/prism-go-panel/internal/auth"
+	"github.com/hybridsakura/prism-go-panel/internal/models"
 )
 
 // ---------- 上下文与中间件 ----------

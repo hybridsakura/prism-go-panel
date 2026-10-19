@@ -1,4 +1,4 @@
-module rustdesk-api-go
+module github.com/hybridsakura/prism-go-panel
 
 go 1.27.2
 

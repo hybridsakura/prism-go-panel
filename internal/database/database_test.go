@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"rustdesk-api-go/internal/config"
+	"github.com/hybridsakura/prism-go-panel/internal/config"
 )
 
 func TestSqliteFilePath(t *testing.T) {
 	cases := map[string]string{
-		"./rustdesk-api.db":             "./rustdesk-api.db",
+		"./prism.db":                    "./prism.db",
 		"data/app.db":                   "data/app.db",
 		"file:data/app.db":              "data/app.db",
 		"file:data/app.db?cache=shared": "data/app.db",

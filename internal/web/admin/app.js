@@ -1,4 +1,4 @@
-/* RustDesk 管理后台 SPA（无依赖，hash 路由，GitHub Primer 风格） */
+/* PRISM 控制台 SPA（无依赖，hash 路由，GitHub Primer 风格） */
 'use strict';
 
 const state = { user: null, all: false, page: 1, keyword: '', total: 0, size: 15 };
@@ -138,7 +138,7 @@ function renderLayout(view) {
   const items = NAV_ITEMS.filter(([, , admin]) => !admin || state.user.is_admin);
   $app.innerHTML = `
     <header class="topnav">
-      <a class="logo" href="#/">${icon('logo')}<span>RustDesk 管理后台</span></a>
+      <a class="logo" href="#/">${icon('logo')}<span>PRISM 控制台</span></a>
       <nav>${items.map(([h, t]) => `<a class="${h === hash ? 'active' : ''}" href="${h}">${t}</a>`).join('')}</nav>
       <div class="right">
         <button class="icon-btn" id="theme-toggle" title="切换浅色/深色">${icon('moon')}</button>
@@ -162,7 +162,7 @@ function viewLogin() {
   return `
     <div class="auth-wrap">
       <div class="auth-logo">${icon('logo').replace('width="22" height="22"', 'width="40" height="40"')}</div>
-      <h1>登录 RustDesk 管理后台</h1>
+      <h1>登录 PRISM 控制台</h1>
       <div class="auth-box">
         <div class="form-row"><label>用户名</label><input type="text" id="f-user" autocomplete="username"></div>
         <div class="form-row"><label>密码</label><input type="password" id="f-pwd" autocomplete="current-password"></div>
@@ -170,7 +170,7 @@ function viewLogin() {
         <div class="form-msg" id="f-msg"></div>
       </div>
       <div class="auth-links">没有账号？<a href="#/register">注册一个</a></div>
-      <div class="auth-tip">rustdesk-api-go · Go rewrite of kingmo888/rustdesk-api-server</div>
+      <div class="auth-tip">github.com/hybridsakura/prism-go-panel · Go rewrite of kingmo888/rustdesk-api-server</div>
     </div>`;
 }
 

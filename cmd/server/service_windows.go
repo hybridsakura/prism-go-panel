@@ -9,7 +9,7 @@ import (
 )
 
 // serviceName 是 Windows 服务管理器中显示的服务名。
-const serviceName = "rustdesk-api"
+const serviceName = "prism-go-panel"
 
 // runServiceIfNeeded 检测进程是否由 Windows 服务控制管理器（SCM）启动；
 // 若是则接管整个进程生命周期并返回 true，否则返回 false 进入控制台模式。

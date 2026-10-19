@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"rustdesk-api-go/internal/auth"
-	"rustdesk-api-go/internal/config"
-	"rustdesk-api-go/internal/database"
-	"rustdesk-api-go/internal/stats"
+	"github.com/hybridsakura/prism-go-panel/internal/auth"
+	"github.com/hybridsakura/prism-go-panel/internal/config"
+	"github.com/hybridsakura/prism-go-panel/internal/database"
+	"github.com/hybridsakura/prism-go-panel/internal/stats"
 )
 
 // newTestServerWith 允许定制配置的测试服务构造器。

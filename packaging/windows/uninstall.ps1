@@ -1,19 +1,19 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-  Stop and remove the rustdesk-api Windows service.
+  Stop and remove the prism-go-panel Windows service.
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File uninstall.ps1
   powershell -ExecutionPolicy Bypass -File uninstall.ps1 -RemoveData
 #>
 param(
-    [string]$InstallDir = "C:\Program Files\rustdesk-api",
-    [string]$DataDir    = "C:\ProgramData\rustdesk-api",
+    [string]$InstallDir = "C:\Program Files\prism-go-panel",
+    [string]$DataDir    = "C:\ProgramData\prism-go-panel",
     [switch]$RemoveData
 )
 $ErrorActionPreference = "Stop"
-$svcName = "rustdesk-api"
+$svcName = "prism-go-panel"
 
 $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
 if ($svc) {

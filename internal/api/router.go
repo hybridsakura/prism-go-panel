@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"rustdesk-api-go/internal/web"
+	"github.com/hybridsakura/prism-go-panel/internal/web"
 )
 
 // Routes 构建完整路由表。

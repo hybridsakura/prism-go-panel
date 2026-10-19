@@ -6,7 +6,7 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"rustdesk-api-go/internal/models"
+	"github.com/hybridsakura/prism-go-panel/internal/models"
 )
 
 // handleExportDevices 导出全部设备资产为 xlsx（仅管理员）。

@@ -14,9 +14,9 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"rustdesk-api-go/internal/auth"
-	"rustdesk-api-go/internal/config"
-	"rustdesk-api-go/internal/models"
+	"github.com/hybridsakura/prism-go-panel/internal/auth"
+	"github.com/hybridsakura/prism-go-panel/internal/config"
+	"github.com/hybridsakura/prism-go-panel/internal/models"
 )
 
 // shareTTL 分享链接有效期，与 Python 参考版一致（15 分钟）。

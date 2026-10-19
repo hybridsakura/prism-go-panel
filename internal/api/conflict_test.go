@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"rustdesk-api-go/internal/config"
+	"github.com/hybridsakura/prism-go-panel/internal/config"
 )
 
 // TestIDConflictDetectionAndBlock 同一 RID 出现不同主机/不同 UUID → 判为冲突并阻止登录。

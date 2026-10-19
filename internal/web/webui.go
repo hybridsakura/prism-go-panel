@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"rustdesk-api-go/internal/config"
+	"github.com/hybridsakura/prism-go-panel/internal/config"
 )
 
 //go:embed admin/index.html admin/style.css admin/app.js

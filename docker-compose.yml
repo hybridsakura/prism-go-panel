@@ -1,13 +1,13 @@
 services:
-  rustdesk-api:
+  prism-go-panel:
     build: .
-    image: rustdesk-api-go:latest
-    container_name: rustdesk-api
+    image: github.com/hybridsakura/prism-go-panel:latest
+    container_name: prism-go-panel
     ports:
       - "21114:21114"
     environment:
       - TZ=Asia/Shanghai
-      - DB_URL=/data/rustdesk-api.db
+      - DB_URL=/data/prism.db
       # 是否允许网页自助注册（关闭后只能由管理员建号）
       - ALLOW_REGISTRATION=true
       # 初始管理员：仅当数据库为空时生效
