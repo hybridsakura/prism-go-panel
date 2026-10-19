@@ -61,6 +61,16 @@ function copyText(text, doneMsg) {
   navigator.clipboard.writeText(text).then(() => toast(doneMsg || '已复制'));
 }
 
+// 可复制的单行代码块（多处复用）
+function copyblockHTML(id, text) {
+  return `<div class="copyblock"><code id="${id}">${esc(text)}</code><button class="btn" data-cb="${id}">${icon('copy')}复制</button></div>`;
+}
+function bindCopyblocks() {
+  document.querySelectorAll('[data-cb]').forEach(b => {
+    b.onclick = () => copyText(document.getElementById(b.dataset.cb).textContent, '已复制');
+  });
+}
+
 /* ---------- 主题 ---------- */
 
 function currentTheme() { return document.documentElement.getAttribute('data-color-mode') || 'light'; }
@@ -461,20 +471,34 @@ async function viewConflicts(main) {
             <td>${c.observations}</td>
             <td>${c.blocked}</td>
             <td>${fmtTime(c.last_seen)}</td>
-            <td><button class="btn btn-sm" data-clear="${esc(c.rid)}">清除记录</button></td>
+            <td><button class="btn btn-sm" data-clear="${esc(c.rid)}">清除记录</button>
+                <button class="btn btn-sm" data-cmd="${esc(c.primary_hostname)}">复制修复命令</button></td>
           </tr>`).join('') : '<tr><td colspan="7" class="empty">暂无冲突 — 目前没有发现重复的远程 ID</td></tr>'}</tbody>
       </table></div>
     </div>
     <div class="box">
-      <div class="box-header">处理方式<span class="sub">给现场同事的操作指引</span></div>
+      <div class="box-header">怎么改 ID<span class="sub">新版客户端已隐藏「更改 ID」按钮，用命令行即可</span></div>
       <div class="box-body">
+        <p style="margin:0 0 8px">在<strong>要更换 ID 的那台机器</strong>上，以<strong>管理员身份</strong>打开命令提示符，执行：</p>
+        ${copyblockHTML('cb-getid', 'rustdesk.exe --get-id')}
+        ${copyblockHTML('cb-setid', 'rustdesk.exe --set-id 1234567890')}
         <ul class="note-list">
-          <li>在被克隆的机器上打开 RustDesk → 设置 → ID → 「更改 ID」，生成新的唯一 ID。</li>
-          <li>改完后重新登录；确认无误后可在上表点「清除记录」（原机会一直放行，无需处理）。</li>
-          <li>批量装机建议装完后统一清理 RustDesk 配置里的 ID 字段，避免多台机器共用同一 ID。</li>
+          <li><code>--get-id</code> 先确认当前 ID；<code>--set-id</code> 改成新的 10 位随机数字（上表「复制修复命令」会生成一个）。</li>
+          <li>该命令走的是与界面相同的改 ID 逻辑，无需登录账号；需已安装客户端且有管理员权限。</li>
+          <li>若提示 <code>Changing ID is disabled!</code>，说明该客户端是定制版（内置禁用了改 ID），只能重装标准版。</li>
+          <li>改完约 10 秒内会以新 ID 注册；确认无误后点「清除记录」。</li>
         </ul>
       </div>
     </div>`;
+
+  // 复制该行的修复命令（随机 10 位 ID）
+  bindCopyblocks();
+  document.querySelectorAll('[data-cmd]').forEach(b => {
+    b.onclick = () => {
+      const newId = String(Math.floor(1_000_000_000 + Math.random() * 900_000_000));
+      copyText(`rustdesk.exe --set-id ${newId}`, `已复制，新 ID：${newId}`);
+    };
+  });
 
   document.querySelectorAll('[data-clear]').forEach(b => {
     b.onclick = async () => {
@@ -647,15 +671,6 @@ async function viewServer(main) {
       </div>`;
     bindCopyblocks();
   };
-
-  function copyblockHTML(id, text) {
-    return `<div class="copyblock"><code id="${id}">${esc(text)}</code><button class="btn" data-cb="${id}">${icon('copy')}复制</button></div>`;
-  }
-  function bindCopyblocks() {
-    document.querySelectorAll('[data-cb]').forEach(b => {
-      b.onclick = () => copyText(document.getElementById(b.dataset.cb).textContent, '已复制');
-    });
-  }
 
   document.getElementById('btn-save').onclick = async () => {
     const body = {
