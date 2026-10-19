@@ -55,4 +55,3 @@ func TestResolveDataDirDefault(t *testing.T) {
 		}
 	}
 }
-
