@@ -622,17 +622,20 @@ async function viewEnrollTokens(main) {
       flash('注册码生成成功', 'success');
       const token = res.enroll_token;
       const cmdMsi = `msiexec /i PrismAgent.msi /qn SERVER=${serverHost} ENROLLTOKEN=${token}`;
-      const cmdCli = `prism-agent.exe --server ${serverHost} --token ${token}`;
+      const cmdBat = `install.bat "${serverHost}" "${token}"`;
+      const cmdPortable = `prism-agent.exe --server ${serverHost} --token ${token}`;
 
       document.getElementById('new-token-result').innerHTML = `
         <div class="box" style="border-color:var(--online);background:var(--bg-subtle)">
           <div class="box-body">
             <p style="margin:0 0 6px"><strong>请妥善保管注册码（仅展示一次，服务端仅存哈希）：</strong></p>
             ${copyblockHTML('cb-token-val', token)}
-            <p style="margin:12px 0 6px;font-size:13px;color:var(--fg-muted)">MSI 静默安装命令示例：</p>
+            <p style="margin:12px 0 6px;font-size:13px;color:var(--fg-muted)">方式一：MSI 静默安装服务（推荐大批量 GPO 分发）：</p>
             ${copyblockHTML('cb-cmd-msi', cmdMsi)}
-            <p style="margin:12px 0 6px;font-size:13px;color:var(--fg-muted)">控制台前台运行命令示例：</p>
-            ${copyblockHTML('cb-cmd-cli', cmdCli)}
+            <p style="margin:12px 0 6px;font-size:13px;color:var(--fg-muted)">方式二：EXE 安装包一键注册服务（管理员运行解压包内的 install.bat）：</p>
+            ${copyblockHTML('cb-cmd-bat', cmdBat)}
+            <p style="margin:12px 0 6px;font-size:13px;color:var(--fg-muted)">方式三：便携启动版（不添加服务，前台关闭即停，配置存放在 %%LocalAppData%%\\AkiraProgram\\PrismGoPanel）：</p>
+            ${copyblockHTML('cb-cmd-cli', cmdPortable)}
           </div>
         </div>`;
       bindCopyblocks();

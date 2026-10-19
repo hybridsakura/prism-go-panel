@@ -242,11 +242,18 @@ func resolveDataDir(explicit string) string {
 		return explicit
 	}
 	if runtime.GOOS == "windows" {
-		if pd := os.Getenv("ProgramData"); pd != "" {
-			return filepath.Join(pd, "Prism Agent")
+		// 优先按照用户指定规则：%LocalAppData%\AkiraProgram\PrismGoPanel
+		if localAppData := os.Getenv("LocalAppData"); localAppData != "" {
+			return filepath.Join(localAppData, "AkiraProgram", "PrismGoPanel")
+		}
+		if userProfile := os.Getenv("USERPROFILE"); userProfile != "" {
+			return filepath.Join(userProfile, "AppData", "Local", "AkiraProgram", "PrismGoPanel")
+		}
+		if home := os.Getenv("HOME"); home != "" {
+			return filepath.Join(home, "AppData", "Local", "AkiraProgram", "PrismGoPanel")
 		}
 	}
-	return "."
+	return filepath.Join(".", "data")
 }
 
 func loadState(path string) (*stateData, error) {

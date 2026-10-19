@@ -1,0 +1,50 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Prism Agent"
+           Manufacturer="com.akiraprism"
+           Version="!(bind.FileVersion.PrismAgentExe)"
+           UpgradeCode="4f526312-d8b8-4d51-913b-1845eb542387"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+    <!-- 允许通过命令行传递 SERVER 与 ENROLLTOKEN 属性 -->
+    <Property Id="SERVER" Secure="yes" Value="http://172.18.11.236:21114" />
+    <Property Id="ENROLLTOKEN" Secure="yes" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="CompanyFolder" Name="AkiraProgram">
+        <Directory Id="INSTALLFOLDER" Name="PrismGoPanel" />
+      </Directory>
+    </StandardDirectory>
+
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="PrismAgentExecutable" Guid="a86985fa-71df-4b36-9b98-33a595ec1421">
+        <File Id="PrismAgentExe"
+              Source="$(var.AgentSourceExe)"
+              KeyPath="yes" />
+
+        <!-- 注册为 Windows 服务并自动启动 -->
+        <ServiceInstall Id="ServiceInstaller"
+                        Type="ownProcess"
+                        Name="PrismAgent"
+                        DisplayName="Prism Agent Service"
+                        Description="Prism Agent endpoint background service for host coordination and asset monitoring."
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal"
+                        Arguments="--server [SERVER] --token [ENROLLTOKEN]" />
+
+        <ServiceControl Id="ServiceControl"
+                        Name="PrismAgent"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Feature Id="MainFeature" Title="Prism Agent" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Package>
+</Wix>

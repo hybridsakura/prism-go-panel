@@ -32,3 +32,25 @@ func TestMachineFingerprintNonEmpty(t *testing.T) {
 		t.Fatalf("指纹长度异常: %q", fp)
 	}
 }
+
+func TestResolveDataDirDefault(t *testing.T) {
+	// 未指定 explicit 时，Windows 平台默认在 LocalAppData/AkiraProgram/PrismGoPanel
+	origLocal := os.Getenv("LocalAppData")
+	defer os.Setenv("LocalAppData", origLocal)
+
+	fakeLocal := filepath.Join(t.TempDir(), "Local")
+	os.Setenv("LocalAppData", fakeLocal)
+
+	got := resolveDataDir("")
+	expected := filepath.Join(fakeLocal, "AkiraProgram", "PrismGoPanel")
+	if got != expected {
+		t.Fatalf("期望 %q, 实际 %q", expected, got)
+	}
+
+	// 指定 explicit 时优先
+	gotExplicit := resolveDataDir("D:\\custom\\data")
+	if gotExplicit != "D:\\custom\\data" {
+		t.Fatalf("指定路径时期望优先返回, 实际 %q", gotExplicit)
+	}
+}
+
