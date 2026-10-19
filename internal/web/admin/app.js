@@ -192,6 +192,7 @@ function bindAuthForm(isLogin) {
       if (isLogin) {
         if (data.code === 1 && data.user) {
           state.user = data.user;
+          state.all = !!data.user.is_admin; // 管理员默认查看全部终端
           location.hash = '#/';
         } else show(data.msg || data.error || '登录失败', false);
       } else {
@@ -253,7 +254,9 @@ async function viewDevices(main) {
         ${state.all ? `<td>${esc(d.owner)}</td>` : ''}
         <td><span class="label-badge ${d.status === 'online' ? 'online' : ''}"><span class="dot"></span>${d.status === 'online' ? '在线' : '离线'}</span></td>
         <td>${fmtTime(d.update_time)}</td>
-      </tr>`).join('') : '<tr><td colspan="12" class="empty">暂无设备 — 客户端登录并上报 sysinfo 后会出现在这里</td></tr>';
+      </tr>`).join('') : `<tr><td colspan="12" class="empty">${state.user.is_admin && !state.all
+        ? '管理视图已切换为「我的设备」，但你名下没有绑定设备 — 勾选上方「全部用户设备」查看全部终端'
+        : '暂无设备 — 客户端配置好 API 地址并登录后，设备会出现在这里'}</td></tr>`;
     renderPager(document.getElementById('pager'), data, reload);
   };
 
@@ -630,5 +633,7 @@ window.addEventListener('hashchange', () => {
 
 (async function boot() {
   try { state.user = await api('/admin/api/me'); } catch { state.user = null; }
+  // 管理员默认查看全部终端，避免"登录后一片空白"的误解
+  state.all = !!(state.user && state.user.is_admin);
   router();
 })();
