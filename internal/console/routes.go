@@ -43,6 +43,13 @@ func (s *Handler) Mount(r chi.Router) {
 				// ID 冲突
 				r.Get("/id-conflicts", s.handleIDConflicts)
 				r.Delete("/id-conflicts/{rid}", s.handleIDConflictDelete)
+
+				// 终端 Agent 管理与注册码
+				r.Get("/agents", s.handleAgentsList)
+				r.Post("/agents/{id}/status", s.handleAgentStatus)
+				r.Get("/enroll-tokens", s.handleEnrollTokensList)
+				r.Post("/enroll-tokens", s.handleEnrollTokenCreate)
+				r.Delete("/enroll-tokens/{id}", s.handleEnrollTokenDelete)
 			})
 		})
 	})

@@ -41,13 +41,15 @@ func MountAdmin(r chi.Router) {
 			_, _ = w.Write(data)
 		}
 	}
-	r.Get("/", serve("index.html", "text/html; charset=utf-8", false))
-	// 管理 SPA 资源体积小且随二进制内嵌发布，统一 no-cache 强制重校验，
-	// 避免旧版浏览器缓存导致前端与后端版本错位
-	r.Get("/style.css", serve("style.css", "text/css; charset=utf-8", false))
-	r.Get("/app.js", serve("app.js", "text/javascript; charset=utf-8", false))
-	// SPA 兜底：其余路径一律返回 index.html（前端 hash 路由）
-	r.Get("/*", serve("index.html", "text/html; charset=utf-8", false))
+	r.Route("/admin", func(r chi.Router) {
+		r.Get("/", serve("index.html", "text/html; charset=utf-8", false))
+		// 管理 SPA 资源体积小且随二进制内嵌发布，统一 no-cache 强制重校验，
+		// 避免旧版浏览器缓存导致前端与后端版本错位
+		r.Get("/style.css", serve("style.css", "text/css; charset=utf-8", false))
+		r.Get("/app.js", serve("app.js", "text/javascript; charset=utf-8", false))
+		// SPA 兜底：其余路径一律返回 index.html（前端 hash 路由）
+		r.Get("/*", serve("index.html", "text/html; charset=utf-8", false))
+	})
 }
 
 //go:embed webui.html

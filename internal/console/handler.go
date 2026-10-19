@@ -12,14 +12,16 @@ import (
 type Handler struct {
 	core     *platform.Core
 	sessions *auth.SessionStore
+	presence *platform.AgentPresence
 	limiter  *httpx.LoginLimiter
 }
 
 // New 创建管理后台处理器。
-func New(core *platform.Core, sessions *auth.SessionStore) *Handler {
+func New(core *platform.Core, sessions *auth.SessionStore, presence *platform.AgentPresence) *Handler {
 	return &Handler{
 		core:     core,
 		sessions: sessions,
+		presence: presence,
 		limiter:  httpx.NewLoginLimiter(core.Cfg.LoginRateLimit),
 	}
 }

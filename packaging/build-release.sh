@@ -24,6 +24,10 @@ build darwin  amd64 "$DIST/prism-go-panel-darwin-amd64"
 build darwin  arm64 "$DIST/prism-go-panel-darwin-arm64"
 build windows amd64 "$DIST/prism-go-panel-windows-amd64.exe"
 
+# 构建终端 Agent
+echo "==> windows/amd64 agent"
+CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="$LDFLAGS" -o "$DIST/prism-agent-windows-amd64.exe" ./cmd/agent
+
 # Unix 平台打 tar.gz（内含二进制 + README + 文档）
 for target in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
     stage="$DIST/pkg-$target"

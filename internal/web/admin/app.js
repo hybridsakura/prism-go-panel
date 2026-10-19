@@ -95,6 +95,8 @@ document.addEventListener('click', e => {
 
 const routes = {
   '/': viewDevices,
+  '/agents': viewAgents,
+  '/enroll-tokens': viewEnrollTokens,
   '/conn-logs': viewConnLogs,
   '/file-logs': viewFileLogs,
   '/share': viewShare,
@@ -105,6 +107,8 @@ const routes = {
 
 const NAV_ITEMS = [
   ['#/', '设备'],
+  ['#/agents', '终端 Agent', true],
+  ['#/enroll-tokens', '注册码', true],
   ['#/conn-logs', '连接日志'],
   ['#/file-logs', '文件日志'],
   ['#/share', '分享'],
@@ -508,6 +512,163 @@ async function viewConflicts(main) {
       else flash(r.msg || '清除失败', 'error');
     };
   });
+}
+
+/* ---------- 视图：终端 Agent 管理（管理员） ---------- */
+
+async function viewAgents(main) {
+  const data = await api('/admin/api/agents?size=100');
+  main.innerHTML = `
+    <div class="pagehead">
+      <h1>终端 Agent</h1>
+      <span class="hint">已注册并由 PRISM 纳管的终端进程</span>
+    </div>
+    <div class="box">
+      <div class="box-body" style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:var(--fg-muted)">Agent 默认以 10s 为周期执行心跳（带抖动），30s 内无心跳视作离线。</span>
+        <a class="btn btn-sm btn-primary" href="#/enroll-tokens">生成安装注册码</a>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>主机名</th><th>在线状态</th><th>系统 / 架构</th><th>版本</th><th>RustDesk ID</th><th>IP</th><th>分组</th><th>纳管状态</th><th>操作</th></tr></thead>
+        <tbody>${data.items.length ? data.items.map(a => `
+          <tr>
+            <td>${a.id}</td>
+            <td><b>${esc(a.hostname)}</b></td>
+            <td>${a.online ? '<span class="label-badge online"><span class="dot"></span>在线</span>' : '<span class="label-badge"><span class="dot"></span>离线</span>'}</td>
+            <td>${esc(a.os)} / ${esc(a.arch)}</td>
+            <td class="mono">${esc(a.version)}</td>
+            <td class="mono">${esc(a.rid) || '<span style="color:var(--fg-muted)">未绑定</span>'}</td>
+            <td class="mono">${esc(a.ip)}</td>
+            <td>${esc(a.group_name) || '-'}</td>
+            <td>${a.status === 'active' ? '<span class="label-badge online"><span class="dot"></span>正常</span>' : '<span class="label-badge danger"><span class="dot"></span>禁用</span>'}</td>
+            <td>
+              ${a.status === 'active'
+                ? `<button class="btn btn-sm btn-danger" data-status-id="${a.id}" data-to="disabled">禁用</button>`
+                : `<button class="btn btn-sm" data-status-id="${a.id}" data-to="active">启用</button>`}
+            </td>
+          </tr>`).join('') : '<tr><td colspan="10" class="empty">暂无纳管的终端 Agent。请先到「注册码」页面生成注册码并在终端安装。</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+
+  document.querySelectorAll('[data-status-id]').forEach(b => {
+    b.onclick = async () => {
+      const id = b.dataset.statusId;
+      const to = b.dataset.to;
+      const opName = to === 'disabled' ? '禁用' : '启用';
+      if (!confirm(`确认${opName}该终端 Agent？`)) return;
+      const r = await api(`/admin/api/agents/${id}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ status: to }),
+      });
+      if (r.code === 1) { flash(`已${opName}`, 'success'); viewAgents(main); }
+      else flash(r.error || `${opName}失败`, 'error');
+    };
+  });
+}
+
+/* ---------- 视图：注册码管理（管理员） ---------- */
+
+async function viewEnrollTokens(main) {
+  const data = await api('/admin/api/enroll-tokens');
+  const serverHost = location.origin;
+  main.innerHTML = `
+    <div class="pagehead">
+      <h1>注册码管理</h1>
+      <span class="hint">用于终端 Agent 首次上线注册换发设备凭证</span>
+    </div>
+    <div class="box">
+      <div class="box-header">生成新注册码</div>
+      <div class="box-body">
+        <div class="toolbar" style="flex-wrap:wrap">
+          <input type="text" id="et-group" placeholder="归属分组（如 检验科、门诊楼-3F）">
+          <input type="number" id="et-max" placeholder="最大安装台数 (默认 1)" min="1" value="1" style="width:170px">
+          <input type="number" id="et-days" placeholder="有效天数 (0 为永久)" min="0" value="7" style="width:150px">
+          <input type="text" id="et-note" placeholder="备注（可选）" style="width:180px">
+          <button class="btn btn-primary" id="btn-create-token">生成注册码</button>
+        </div>
+        <div id="new-token-result" style="margin-top:12px"></div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-header">已有注册码</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>归属分组</th><th>额度 (已用/上限)</th><th>状态</th><th>有效截止</th><th>备注</th><th>创建时间</th><th>操作</th></tr></thead>
+        <tbody>${data.items.length ? data.items.map(t => `
+          <tr>
+            <td>${t.id}</td>
+            <td><b>${esc(t.group_name) || '未分组'}</b></td>
+            <td>${t.used} / ${t.max_uses > 0 ? t.max_uses : '无限制'}</td>
+            <td>${t.expired ? '<span class="label-badge danger"><span class="dot"></span>已过期</span>' : (t.max_uses > 0 && t.used >= t.max_uses ? '<span class="label-badge"><span class="dot"></span>已用尽</span>' : '<span class="label-badge online"><span class="dot"></span>有效</span>')}</td>
+            <td>${t.expires_at ? fmtTime(t.expires_at) : '永久有效'}</td>
+            <td>${esc(t.note) || '-'}</td>
+            <td>${fmtTime(t.created_at)}</td>
+            <td><button class="btn btn-sm btn-danger" data-del-token="${t.id}">删除</button></td>
+          </tr>`).join('') : '<tr><td colspan="8" class="empty">暂无注册码，请在上方生成。</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+
+  document.getElementById('btn-create-token').onclick = async () => {
+    const group_name = document.getElementById('et-group').value.trim();
+    const max_uses = parseInt(document.getElementById('et-max').value, 10) || 1;
+    const expires_days = parseInt(document.getElementById('et-days').value, 10) || 0;
+    const note = document.getElementById('et-note').value.trim();
+
+    const res = await api('/admin/api/enroll-tokens', {
+      method: 'POST',
+      body: JSON.stringify({ group_name, max_uses, expires_days, note }),
+    });
+
+    if (res.code === 1) {
+      flash('注册码生成成功', 'success');
+      const token = res.enroll_token;
+      const cmdMsi = `msiexec /i PrismAgent.msi /qn SERVER=${serverHost} ENROLLTOKEN=${token}`;
+      const cmdCli = `prism-agent.exe --server ${serverHost} --token ${token}`;
+
+      document.getElementById('new-token-result').innerHTML = `
+        <div class="box" style="border-color:var(--online);background:var(--bg-subtle)">
+          <div class="box-body">
+            <p style="margin:0 0 6px"><strong>请妥善保管注册码（仅展示一次，服务端仅存哈希）：</strong></p>
+            ${copyblockHTML('cb-token-val', token)}
+            <p style="margin:12px 0 6px;font-size:13px;color:var(--fg-muted)">MSI 静默安装命令示例：</p>
+            ${copyblockHTML('cb-cmd-msi', cmdMsi)}
+            <p style="margin:12px 0 6px;font-size:13px;color:var(--fg-muted)">控制台前台运行命令示例：</p>
+            ${copyblockHTML('cb-cmd-cli', cmdCli)}
+          </div>
+        </div>`;
+      bindCopyblocks();
+      // 重新拉取下表
+      const fresh = await api('/admin/api/enroll-tokens');
+      const tbody = document.querySelector('table tbody');
+      if (tbody) {
+        tbody.innerHTML = fresh.items.map(t => `
+          <tr>
+            <td>${t.id}</td>
+            <td><b>${esc(t.group_name) || '未分组'}</b></td>
+            <td>${t.used} / ${t.max_uses > 0 ? t.max_uses : '无限制'}</td>
+            <td>${t.expired ? '<span class="label-badge danger"><span class="dot"></span>已过期</span>' : (t.max_uses > 0 && t.used >= t.max_uses ? '<span class="label-badge"><span class="dot"></span>已用尽</span>' : '<span class="label-badge online"><span class="dot"></span>有效</span>')}</td>
+            <td>${t.expires_at ? fmtTime(t.expires_at) : '永久有效'}</td>
+            <td>${esc(t.note) || '-'}</td>
+            <td>${fmtTime(t.created_at)}</td>
+            <td><button class="btn btn-sm btn-danger" data-del-token="${t.id}">删除</button></td>
+          </tr>`).join('');
+        bindDelTokens();
+      }
+    } else {
+      flash(res.error || '生成失败', 'error');
+    }
+  };
+
+  function bindDelTokens() {
+    document.querySelectorAll('[data-del-token]').forEach(b => {
+      b.onclick = async () => {
+        if (!confirm('确认删除该注册码？已注册的终端不受影响。')) return;
+        const r = await api(`/admin/api/enroll-tokens/${b.dataset.delToken}`, { method: 'DELETE' });
+        if (r.code === 1) { flash('已删除', 'success'); viewEnrollTokens(main); }
+        else flash(r.error || '删除失败', 'error');
+      };
+    });
+  }
+  bindDelTokens();
 }
 
 /* ---------- 视图：用户管理（管理员） ---------- */

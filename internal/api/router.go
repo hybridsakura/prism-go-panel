@@ -1,12 +1,13 @@
 // Package api 是组合根：把领域层与各传输层装配成完整的 HTTP 服务。
 //
 // 分工：
-//   - platform   领域层（设备、在线状态、ID 冲突）
+//   - platform   领域层（设备、在线状态、ID 冲突、心跳跟踪）
 //   - clientapi  RustDesk 客户端契约 /api/*
 //   - console    管理后台接口 /admin/api/*
+//   - agentapi   终端 Agent 契约 /agent/v1/*
 //   - web        管理后台静态页面
 //
-// 传输层不直接互相依赖，新增入口（如未来的 agentapi）只需在这里装配。
+// 传输层不直接互相依赖，新增入口只需在这里装配。
 package api
 
 import (
@@ -18,6 +19,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"gorm.io/gorm"
 
+	"github.com/hybridsakura/prism-go-panel/internal/agentapi"
 	"github.com/hybridsakura/prism-go-panel/internal/auth"
 	"github.com/hybridsakura/prism-go-panel/internal/clientapi"
 	"github.com/hybridsakura/prism-go-panel/internal/config"
@@ -30,18 +32,37 @@ import (
 
 // Server 聚合各传输层处理器。
 type Server struct {
-	cfg     *config.Config
-	client  *clientapi.Handler
-	console *console.Handler
+	cfg      *config.Config
+	client   *clientapi.Handler
+	console  *console.Handler
+	agent    *agentapi.Handler
+	presence *platform.AgentPresence
+	db       *gorm.DB
 }
 
 // NewServer 创建 API 服务器（组合根）。
 func NewServer(cfg *config.Config, db *gorm.DB, tokens *auth.TokenStore, sessions *auth.SessionStore, tracker *stats.Tracker) *Server {
 	core := platform.New(cfg, db, tracker)
+	presence := platform.NewAgentPresence()
+
+	// 启动后台定时任务：每 20s 批量将内存心跳刷入数据库，保护 Atom/SQLite
+	go func() {
+		ticker := time.NewTicker(20 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := presence.Flush(db); err != nil {
+				slog.Warn("agent_presence_flush_failed", "err", err)
+			}
+		}
+	}()
+
 	return &Server{
-		cfg:     cfg,
-		client:  clientapi.New(core, tokens),
-		console: console.New(core, sessions),
+		cfg:      cfg,
+		client:   clientapi.New(core, tokens),
+		console:  console.New(core, sessions, presence),
+		agent:    agentapi.New(core, presence),
+		presence: presence,
+		db:       db,
 	}
 }
 
@@ -59,6 +80,9 @@ func (s *Server) Routes() http.Handler {
 
 	// RustDesk 客户端契约（/api/*）
 	s.client.Mount(r)
+
+	// 终端 Agent 契约（/agent/v1/*）
+	s.agent.Mount(r)
 
 	// 管理后台接口（/admin/api/*）+ 静态页面（/admin/*）
 	s.console.Mount(r)

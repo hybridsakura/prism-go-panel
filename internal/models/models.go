@@ -136,3 +136,33 @@ type IDConflict struct {
 	FirstSeen       time.Time `gorm:"autoCreateTime"`
 	LastSeen        time.Time `gorm:"autoUpdateTime;index"`
 }
+
+// EnrollToken 一次性注册码。只保存哈希，明文仅在生成时返回一次。
+type EnrollToken struct {
+	ID        uint       `gorm:"primaryKey"`
+	TokenHash string     `gorm:"size:128;uniqueIndex;not null"`
+	GroupName string     `gorm:"size:100"`
+	MaxUses   int        `gorm:"default:1"`
+	Used      int        `gorm:"default:0"`
+	ExpiresAt *time.Time `gorm:"index"`
+	Note      string     `gorm:"size:200"`
+	CreatedAt time.Time  `gorm:"autoCreateTime"`
+}
+
+// Agent 自研终端程序的实例记录。
+// 令牌同样只存哈希；Fingerprint 用于同一台机器重复注册的幂等判定。
+type Agent struct {
+	ID          uint       `gorm:"primaryKey"`
+	TokenHash   string     `gorm:"size:128;uniqueIndex;not null"`
+	Fingerprint string     `gorm:"size:128;index"`
+	RID         string     `gorm:"column:rid;size:60;index"`
+	Hostname    string     `gorm:"size:100"`
+	OS          string     `gorm:"size:100"`
+	Arch        string     `gorm:"size:50"`
+	Version     string     `gorm:"size:50"`
+	IP          string     `gorm:"size:64"`
+	GroupName   string     `gorm:"size:100;index"`
+	Status      string     `gorm:"size:20;default:active;index"`
+	LastSeenAt  *time.Time `gorm:"index"`
+	EnrolledAt  time.Time  `gorm:"autoCreateTime"`
+}
