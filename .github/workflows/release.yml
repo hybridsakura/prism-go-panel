@@ -43,7 +43,7 @@ jobs:
           cache: true
 
       - name: Install WiX toolset v4
-        run: dotnet tool install --global wix
+        run: dotnet tool install --global wix --version 4.0.5
 
       - name: Build Agent Windows Binary
         shell: bash

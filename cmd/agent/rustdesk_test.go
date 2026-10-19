@@ -34,23 +34,25 @@ func TestMachineFingerprintNonEmpty(t *testing.T) {
 }
 
 func TestResolveDataDirDefault(t *testing.T) {
-	// 未指定 explicit 时，Windows 平台默认在 LocalAppData/AkiraProgram/PrismGoPanel
-	origLocal := os.Getenv("LocalAppData")
-	defer os.Setenv("LocalAppData", origLocal)
-
-	fakeLocal := filepath.Join(t.TempDir(), "Local")
-	os.Setenv("LocalAppData", fakeLocal)
-
-	got := resolveDataDir("")
-	expected := filepath.Join(fakeLocal, "AkiraProgram", "PrismGoPanel")
-	if got != expected {
-		t.Fatalf("期望 %q, 实际 %q", expected, got)
+	// 指定 explicit 时在任何平台都优先返回
+	gotExplicit := resolveDataDir("custom/data")
+	if gotExplicit != "custom/data" {
+		t.Fatalf("指定路径时期望优先返回, 实际 %q", gotExplicit)
 	}
 
-	// 指定 explicit 时优先
-	gotExplicit := resolveDataDir("D:\\custom\\data")
-	if gotExplicit != "D:\\custom\\data" {
-		t.Fatalf("指定路径时期望优先返回, 实际 %q", gotExplicit)
+	// 针对 Windows 平台验证 LocalAppData 规则
+	if os.Getenv("OS") == "Windows_NT" {
+		origLocal := os.Getenv("LocalAppData")
+		defer os.Setenv("LocalAppData", origLocal)
+
+		fakeLocal := filepath.Join(t.TempDir(), "Local")
+		os.Setenv("LocalAppData", fakeLocal)
+
+		got := resolveDataDir("")
+		expected := filepath.Join(fakeLocal, "AkiraProgram", "PrismGoPanel")
+		if got != expected {
+			t.Fatalf("期望 %q, 实际 %q", expected, got)
+		}
 	}
 }
 
