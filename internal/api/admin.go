@@ -225,6 +225,9 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	if devicesTotal > 0 {
 		rate = float64(online) / float64(devicesTotal) * 100
 	}
+	// ID 冲突数量（无账号模式下这是唯一的告警渠道，前端据此显示横幅）
+	var conflicts int64
+	_ = s.db.Model(&models.IDConflict{}).Count(&conflicts).Error
 	writeJSON(w, http.StatusOK, map[string]any{
 		"devices_total":   devicesTotal,
 		"devices_online":  online,
@@ -234,6 +237,7 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		"conn_today":      connToday,
 		"files_today":     filesToday,
 		"shares_active":   sharesActive,
+		"id_conflicts":    conflicts,
 	})
 }
 
@@ -254,8 +258,25 @@ type deviceRow struct {
 	Version    string   `json:"version"`
 	IPAddress  string   `json:"ip_address"`
 	Status     string   `json:"status"`
+	Conflict   bool     `json:"conflict"` // 该 RID 存在重复（多台机器共用）
 	CreateTime string   `json:"create_time"`
 	UpdateTime string   `json:"update_time"`
+}
+
+// conflictRIDs 返回给定 RID 中存在于冲突表的集合。
+func (s *Server) conflictRIDs(rids []string) map[string]bool {
+	out := map[string]bool{}
+	if len(rids) == 0 {
+		return out
+	}
+	var rows []models.IDConflict
+	if err := s.db.Where("rid IN ?", rids).Find(&rows).Error; err != nil {
+		return out
+	}
+	for _, c := range rows {
+		out[c.RID] = true
+	}
+	return out
 }
 
 func (s *Server) handleDevices(w http.ResponseWriter, r *http.Request) {
@@ -292,13 +313,14 @@ func (s *Server) handleDevices(w http.ResponseWriter, r *http.Request) {
 			rids = append(rids, d.RID)
 		}
 		peerByRID, ownerByRID := s.peerInfoForRIDs(rids)
+		conflicts := s.conflictRIDs(rids)
 		for _, d := range devices {
 			p := peerByRID[d.RID]
 			rows = append(rows, deviceRow{
 				RID: d.RID, Alias: p.Alias, Hostname: d.Hostname, Username: d.Username,
 				Owner: ownerByRID[d.RID], Platform: d.OS, Tags: splitTags(p.Tags),
 				CPU: d.CPU, Memory: d.Memory, OS: d.OS, Version: d.Version,
-				IPAddress: d.IPAddress, Status: onlineStatus(s, d.RID),
+				IPAddress: d.IPAddress, Status: onlineStatus(s, d.RID), Conflict: conflicts[d.RID],
 				CreateTime: formatTime(d.CreateTime), UpdateTime: formatTime(d.UpdateTime),
 			})
 		}
@@ -323,12 +345,13 @@ func (s *Server) handleDevices(w http.ResponseWriter, r *http.Request) {
 			rids = append(rids, p.RID)
 		}
 		devByRID := s.devicesForRIDs(rids)
+		conflicts := s.conflictRIDs(rids)
 		for _, p := range peers {
 			d, ok := devByRID[p.RID]
 			row := deviceRow{
 				RID: p.RID, Alias: p.Alias, Hostname: p.Hostname, Username: p.Username,
 				Owner: user.Username, Platform: p.Platform, Tags: splitTags(p.Tags),
-				Status: offline,
+				Status: offline, Conflict: conflicts[p.RID],
 			}
 			if ok {
 				row.CPU = d.CPU

@@ -214,6 +214,7 @@ function bindAuthForm(isLogin) {
 async function viewDevices(main) {
   main.innerHTML = `
     <div class="pagehead"><h1>设备</h1><span class="hint">心跳驱动的在线状态与资产清单</span></div>
+    <div id="conflict-alert"></div>
     <div class="stat-grid" id="stat-cards"></div>
     <div class="box">
       <div class="box-body" style="padding-bottom:8px">
@@ -244,7 +245,7 @@ async function viewDevices(main) {
     state.total = data.total;
     document.getElementById('rows').innerHTML = data.items.length ? data.items.map(d => `
       <tr>
-        <td class="mono">${esc(d.rid)}</td>
+        <td class="mono">${esc(d.rid)}${d.conflict ? ' <span class="label-badge danger" title="该 ID 被多台机器重复使用"><span class="dot"></span>重复</span>' : ''}</td>
         <td>${esc(d.alias) || '<span style="color:var(--fg-muted)">-</span>'}</td>
         <td>${esc(d.hostname) || '-'}</td>
         <td>${esc(d.username) || '-'}</td>
@@ -276,6 +277,20 @@ async function viewDevices(main) {
 
 async function loadStats(el) {
   const s = await api('/admin/api/stats');
+  const alert = document.getElementById('conflict-alert');
+  if (alert) {
+    alert.innerHTML = s.id_conflicts > 0 ? `
+      <div class="box" style="border-color:var(--danger);margin-bottom:16px">
+        <div class="box-body" style="display:flex;align-items:center;gap:12px">
+          <span class="label-badge danger" style="flex:none"><span class="dot"></span>需要处理</span>
+          <div style="flex:1">
+            检测到 <b>${s.id_conflicts}</b> 个远程 ID 被多台机器重复使用。这会直接导致远程连接提示
+            「无法验证端到端加密」，并可能连到错误的机器。
+          </div>
+          <a class="btn btn-sm" href="#/conflicts">查看详情</a>
+        </div>
+      </div>` : '';
+  }
   el.innerHTML = `
     <div class="stat-card"><div class="label">设备总数</div><div class="value">${s.devices_total}</div></div>
     <div class="stat-card"><div class="label">在线设备</div><div class="value green">${s.devices_online}</div></div>
