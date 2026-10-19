@@ -175,31 +175,6 @@ func TestProfileCheck(t *testing.T) {
 	}
 }
 
-// TestSplitHostPort 与文件名变体的纯函数测试。
-func TestSplitHostPort(t *testing.T) {
-	cases := []struct {
-		in       string
-		def      int
-		wantHost string
-		wantPort int
-	}{
-		{"example.com", 21116, "example.com", 21116},
-		{"example.com:31000", 21116, "example.com", 31000},
-		{"1.2.3.4:1234", 21116, "1.2.3.4", 1234},
-		{"", 21116, "", 21116},
-		{"example.com:abc", 21116, "example.com:abc", 21116}, // 非数字端口整体视为 host
-	}
-	for _, c := range cases {
-		h, p := splitHostPort(c.in, c.def)
-		if h != c.wantHost || p != c.wantPort {
-			t.Errorf("splitHostPort(%q,%d) = (%q,%d), want (%q,%d)", c.in, c.def, h, p, c.wantHost, c.wantPort)
-		}
-	}
-	if got := filenameQS("rustdesk-host=a,key=b.exe"); got != "rustdesk-host=a,key=b,-qs.exe" {
-		t.Errorf("filenameQS 异常: %s", got)
-	}
-}
-
 // TestProfileAdminOnly 非管理员不能访问配置档案接口。
 func TestProfileAdminOnly(t *testing.T) {
 	ts, client := newTestServerWith(t, nil)

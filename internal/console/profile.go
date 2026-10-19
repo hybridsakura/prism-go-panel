@@ -1,4 +1,4 @@
-package api
+package console
 
 import (
 	"fmt"
@@ -13,6 +13,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/hybridsakura/prism-go-panel/internal/models"
+
+	"github.com/hybridsakura/prism-go-panel/internal/httpx"
 )
 
 // 默认端口约定（与官方 rustdesk-server 一致）：
@@ -29,15 +31,15 @@ var hostPortRe = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9.\-_]*[a-zA-Z0-9])?(
 
 // ---------- 档案读写 ----------
 
-func (s *Server) loadProfile() *models.ServerProfile {
+func (s *Handler) loadProfile() *models.ServerProfile {
 	p := &models.ServerProfile{}
-	if err := s.db.First(p, 1).Error; err != nil {
+	if err := s.core.DB.First(p, 1).Error; err != nil {
 		p.ID = 1
 	}
 	return p
 }
 
-func (s *Server) handleProfileGet(w http.ResponseWriter, r *http.Request) {
+func (s *Handler) handleProfileGet(w http.ResponseWriter, r *http.Request) {
 	p := s.loadProfile()
 	resp := map[string]any{
 		"id_server":    p.IDServer,
@@ -51,18 +53,18 @@ func (s *Server) handleProfileGet(w http.ResponseWriter, r *http.Request) {
 	if k := s.detectPublicKey(); k != "" && p.Key == "" {
 		resp["detected_key"] = k // 通过 HBBS_KEY_FILE 探测到的公钥，仅档案为空时提示
 	}
-	writeJSON(w, http.StatusOK, resp)
+	httpx.JSON(w, http.StatusOK, resp)
 }
 
-func (s *Server) handleProfilePut(w http.ResponseWriter, r *http.Request) {
+func (s *Handler) handleProfilePut(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		IDServer    string `json:"id_server"`
 		RelayServer string `json:"relay_server"`
 		APIServer   string `json:"api_server"`
 		Key         string `json:"key"`
 	}
-	if err := readJSON(r, &req); err != nil {
-		writeJSON(w, http.StatusOK, map[string]any{"code": 0, "msg": "请求格式错误"})
+	if err := httpx.ReadJSON(r, &req); err != nil {
+		httpx.JSON(w, http.StatusOK, map[string]any{"code": 0, "msg": "请求格式错误"})
 		return
 	}
 	for name, v := range map[string]string{
@@ -70,13 +72,13 @@ func (s *Server) handleProfilePut(w http.ResponseWriter, r *http.Request) {
 	} {
 		v = strings.TrimSpace(v)
 		if v != "" && !hostPortRe.MatchString(v) {
-			writeJSON(w, http.StatusOK, map[string]any{"code": 0, "msg": name + "格式不正确，应为 host 或 host:port"})
+			httpx.JSON(w, http.StatusOK, map[string]any{"code": 0, "msg": name + "格式不正确，应为 host 或 host:port"})
 			return
 		}
 	}
 	key := strings.TrimSpace(req.Key)
 	if key != "" && (len(key) < 32 || len(key) > 100) {
-		writeJSON(w, http.StatusOK, map[string]any{"code": 0, "msg": "公钥长度异常，应为 id_ed25519.pub 的内容"})
+		httpx.JSON(w, http.StatusOK, map[string]any{"code": 0, "msg": "公钥长度异常，应为 id_ed25519.pub 的内容"})
 		return
 	}
 
@@ -85,20 +87,20 @@ func (s *Server) handleProfilePut(w http.ResponseWriter, r *http.Request) {
 	p.RelayServer = strings.TrimSpace(req.RelayServer)
 	p.APIServer = strings.TrimSpace(req.APIServer)
 	p.Key = key
-	if err := s.db.Save(p).Error; err != nil {
-		serverError(w, err)
+	if err := s.core.DB.Save(p).Error; err != nil {
+		httpx.ServerError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"code": 1})
+	httpx.JSON(w, http.StatusOK, map[string]any{"code": 1})
 }
 
 // detectPublicKey 从 HBBS_KEY_FILE（hbbs 数据目录中的 id_ed25519.pub）读取公钥。
 // 一体部署时把 hbbs 目录挂载进来即可免手填。
-func (s *Server) detectPublicKey() string {
-	if s.cfg.HBBSKeyFile == "" {
+func (s *Handler) detectPublicKey() string {
+	if s.core.Cfg.HBBSKeyFile == "" {
 		return ""
 	}
-	data, err := os.ReadFile(s.cfg.HBBSKeyFile)
+	data, err := os.ReadFile(s.core.Cfg.HBBSKeyFile)
 	if err != nil {
 		return ""
 	}
@@ -146,10 +148,10 @@ func derivePorts(p *models.ServerProfile) []portInfo {
 
 // ---------- 客户端配置生成 ----------
 
-func (s *Server) handleClientConfig(w http.ResponseWriter, r *http.Request) {
+func (s *Handler) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 	p := s.loadProfile()
 	if p.IDServer == "" {
-		writeJSON(w, http.StatusOK, map[string]any{"code": 0, "msg": "请先填写 ID 服务器地址"})
+		httpx.JSON(w, http.StatusOK, map[string]any{"code": 0, "msg": "请先填写 ID 服务器地址"})
 		return
 	}
 	key := p.Key
@@ -165,7 +167,7 @@ func (s *Server) handleClientConfig(w http.ResponseWriter, r *http.Request) {
 	relay := p.RelayServer
 	idHost, _ := splitHostPort(p.IDServer, defaultRendezvousPort)
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	httpx.JSON(w, http.StatusOK, map[string]any{
 		"code":             1,
 		"filename":         filename,             // rustdesk-host=...,key=....exe
 		"filename_elevate": filenameQS(filename), // 追加 ,-qs 自动提权变体
@@ -199,10 +201,10 @@ func filenameQS(filename string) string {
 
 // ---------- 连通性自检 ----------
 
-func (s *Server) handleProfileCheck(w http.ResponseWriter, r *http.Request) {
+func (s *Handler) handleProfileCheck(w http.ResponseWriter, r *http.Request) {
 	p := s.loadProfile()
 	if p.IDServer == "" {
-		writeJSON(w, http.StatusOK, map[string]any{"code": 0, "msg": "请先填写 ID 服务器地址"})
+		httpx.JSON(w, http.StatusOK, map[string]any{"code": 0, "msg": "请先填写 ID 服务器地址"})
 		return
 	}
 	idHost, _ := splitHostPort(p.IDServer, defaultRendezvousPort)
@@ -250,7 +252,7 @@ func (s *Server) handleProfileCheck(w http.ResponseWriter, r *http.Request) {
 		}
 		results = append(results, res)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"code": 1, "results": results})
+	httpx.JSON(w, http.StatusOK, map[string]any{"code": 1, "results": results})
 }
 
 func hostWithoutPort(hostport string) string {

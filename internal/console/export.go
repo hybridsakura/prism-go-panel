@@ -1,4 +1,4 @@
-package api
+package console
 
 import (
 	"net/http"
@@ -7,20 +7,22 @@ import (
 	"github.com/xuri/excelize/v2"
 
 	"github.com/hybridsakura/prism-go-panel/internal/models"
+
+	"github.com/hybridsakura/prism-go-panel/internal/httpx"
 )
 
 // handleExportDevices 导出全部设备资产为 xlsx（仅管理员）。
 // 列与 Python 参考版的 down_peers 一致，并附加在线状态与所属用户。
-func (s *Server) handleExportDevices(w http.ResponseWriter, r *http.Request) {
+func (s *Handler) handleExportDevices(w http.ResponseWriter, r *http.Request) {
 	user := userFromContext(r.Context())
 	if user == nil || !user.IsAdmin {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "需要管理员权限"})
+		httpx.JSON(w, http.StatusForbidden, map[string]string{"error": "需要管理员权限"})
 		return
 	}
 
 	var devices []models.Device
-	if err := s.db.Order("update_time DESC").Find(&devices).Error; err != nil {
-		serverError(w, err)
+	if err := s.core.DB.Order("update_time DESC").Find(&devices).Error; err != nil {
+		httpx.ServerError(w, err)
 		return
 	}
 	rids := make([]string, 0, len(devices))
@@ -33,7 +35,7 @@ func (s *Server) handleExportDevices(w http.ResponseWriter, r *http.Request) {
 	defer f.Close()
 	sheet := "设备信息"
 	if err := f.SetSheetName(f.GetSheetName(0), sheet); err != nil {
-		serverError(w, err)
+		httpx.ServerError(w, err)
 		return
 	}
 
@@ -54,7 +56,7 @@ func (s *Server) handleExportDevices(w http.ResponseWriter, r *http.Request) {
 	for i, d := range devices {
 		row := i + 2
 		status := "离线"
-		if s.tracker.Online(d.RID) {
+		if s.core.Tracker.Online(d.RID) {
 			status = "在线"
 		}
 		owner := ownerByRID[d.RID]

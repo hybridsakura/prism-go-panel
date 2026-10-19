@@ -14,6 +14,7 @@ import (
 	"github.com/hybridsakura/prism-go-panel/internal/auth"
 	"github.com/hybridsakura/prism-go-panel/internal/config"
 	"github.com/hybridsakura/prism-go-panel/internal/database"
+	"github.com/hybridsakura/prism-go-panel/internal/platform"
 	"github.com/hybridsakura/prism-go-panel/internal/stats"
 )
 
@@ -377,19 +378,19 @@ func TestConvertFilesize(t *testing.T) {
 		1073741824: "1.00 GB",
 	}
 	for in, want := range cases {
-		if got := convertFilesize(in); got != want {
-			t.Errorf("convertFilesize(%d) = %s, want %s", in, got, want)
+		if got := platform.ConvertFilesize(in); got != want {
+			t.Errorf("platform.ConvertFilesize(%d) = %s, want %s", in, got, want)
 		}
 	}
 }
 
 // TestParseTagColors 兼容 tag_colors 的对象与双重编码字符串两种形态。
 func TestParseTagColors(t *testing.T) {
-	obj := parseTagColors([]byte(`{"a":"16744192"}`))
+	obj := platform.ParseTagColors([]byte(`{"a":"16744192"}`))
 	if obj["a"] != "16744192" {
 		t.Errorf("对象形态解析失败: %v", obj)
 	}
-	str := parseTagColors([]byte(`"{\"b\":\"255\"}"`))
+	str := platform.ParseTagColors([]byte(`"{\"b\":\"255\"}"`))
 	if str["b"] != "255" {
 		t.Errorf("字符串形态解析失败: %v", str)
 	}

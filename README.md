@@ -152,6 +152,20 @@ RustDesk 客户端
 目录结构保持为 `{module,js,assets,canvaskit@*,ogvjs-*}`。入口 JS 与 canvaskit 目录名会自动探测
 （Flutter 构建产物带 hash 后缀，无需手工修改）。
 
+## 代码结构
+
+```
+internal/
+  api/        组合根：装配领域层与各传输层，注册路由
+  platform/   领域层：设备、在线状态、ID 冲突、格式化（跨入口复用）
+  clientapi/  RustDesk 客户端契约（/api/*），只做协议翻译
+  console/    管理后台接口（/admin/api/*）与登录态/权限
+  httpx/      HTTP 通用工具（JSON 响应、请求解析、登录限速）
+  web/        管理后台静态页面（内嵌 SPA）
+```
+
+传输层之间不互相依赖，新增入口（例如自研 Agent 的 `/agent/v1/*`）只需新增一个包并在 `api` 中装配。
+
 ## 从 Python 版迁移
 
 - 数据库**不通用**（Django schema 不同），Go 版使用独立的 `prism.db`

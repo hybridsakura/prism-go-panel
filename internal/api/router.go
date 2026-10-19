@@ -1,3 +1,12 @@
+// Package api 是组合根：把领域层与各传输层装配成完整的 HTTP 服务。
+//
+// 分工：
+//   - platform   领域层（设备、在线状态、ID 冲突）
+//   - clientapi  RustDesk 客户端契约 /api/*
+//   - console    管理后台接口 /admin/api/*
+//   - web        管理后台静态页面
+//
+// 传输层不直接互相依赖，新增入口（如未来的 agentapi）只需在这里装配。
 package api
 
 import (
@@ -7,9 +16,34 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"gorm.io/gorm"
 
+	"github.com/hybridsakura/prism-go-panel/internal/auth"
+	"github.com/hybridsakura/prism-go-panel/internal/clientapi"
+	"github.com/hybridsakura/prism-go-panel/internal/config"
+	"github.com/hybridsakura/prism-go-panel/internal/console"
+	"github.com/hybridsakura/prism-go-panel/internal/httpx"
+	"github.com/hybridsakura/prism-go-panel/internal/platform"
+	"github.com/hybridsakura/prism-go-panel/internal/stats"
 	"github.com/hybridsakura/prism-go-panel/internal/web"
 )
+
+// Server 聚合各传输层处理器。
+type Server struct {
+	cfg     *config.Config
+	client  *clientapi.Handler
+	console *console.Handler
+}
+
+// NewServer 创建 API 服务器（组合根）。
+func NewServer(cfg *config.Config, db *gorm.DB, tokens *auth.TokenStore, sessions *auth.SessionStore, tracker *stats.Tracker) *Server {
+	core := platform.New(cfg, db, tracker)
+	return &Server{
+		cfg:     cfg,
+		client:  clientapi.New(core, tokens),
+		console: console.New(core, sessions),
+	}
+}
 
 // Routes 构建完整路由表。
 func (s *Server) Routes() http.Handler {
@@ -20,69 +54,17 @@ func (s *Server) Routes() http.Handler {
 	r.Use(middleware.Timeout(30 * time.Second))
 
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]any{"status": "ok"})
+		httpx.JSON(w, http.StatusOK, map[string]any{"status": "ok"})
 	})
 
-	// ---------- RustDesk 客户端契约（/api） ----------
-	r.Route("/api", func(r chi.Router) {
-		r.Post("/login", s.handleLogin)
-		r.Post("/logout", s.handleLogout)
-		r.Post("/currentUser", s.handleCurrentUser)
-		r.Get("/ab", s.handleABGet)
-		r.Post("/ab", s.handleABPost)
-		r.Post("/ab/get", s.handleABGetCompat)
-		r.Post("/sysinfo", s.handleSysinfo)
-		r.Post("/heartbeat", s.handleHeartbeat)
-		r.Post("/audit", s.handleAudit)
-		r.Post("/users", s.handleUsersStub)
-		r.Post("/peers", s.handlePeersStub)
-	})
+	// RustDesk 客户端契约（/api/*）
+	s.client.Mount(r)
 
-	// ---------- 管理后台（/admin） ----------
-	r.Route("/admin", func(r chi.Router) {
-		// 无需会话的接口
-		r.Post("/api/login", s.handleAdminLogin)
-		r.Post("/api/logout", s.handleAdminLogout)
-		r.Post("/api/register", s.handleAdminRegister)
+	// 管理后台接口（/admin/api/*）+ 静态页面（/admin/*）
+	s.console.Mount(r)
+	web.MountAdmin(r)
 
-		// 需要登录的接口
-		r.Group(func(r chi.Router) {
-			r.Use(s.requireSession)
-			r.Get("/api/me", s.handleAdminMe)
-			r.Get("/api/stats", s.handleStats)
-			r.Get("/api/devices", s.handleDevices)
-			r.Get("/api/devices/export", s.handleExportDevices)
-			r.Get("/api/conn_logs", s.handleConnLogs)
-			r.Get("/api/file_logs", s.handleFileLogs)
-			r.Get("/api/shares", s.handleSharesList)
-			r.Post("/api/shares", s.handleShareCreate)
-			r.Post("/api/shares/{shash}/claim", s.handleShareClaim)
-
-			// 仅管理员
-			r.Group(func(r chi.Router) {
-				r.Use(s.requireAdmin)
-				r.Get("/api/users", s.handleUsersList)
-				r.Post("/api/users", s.handleUserCreate)
-				r.Delete("/api/users/{id}", s.handleUserDelete)
-				r.Post("/api/users/{id}/password", s.handleUserResetPassword)
-
-				// 服务端配置档案（对接 hbbs/hbbr 部署信息 + 客户端配置生成）
-				r.Get("/api/server-profile", s.handleProfileGet)
-				r.Put("/api/server-profile", s.handleProfilePut)
-				r.Post("/api/server-profile/check", s.handleProfileCheck)
-				r.Get("/api/server-profile/client-config", s.handleClientConfig)
-
-				// ID 冲突（重复远程 ID）检测结果
-				r.Get("/api/id-conflicts", s.handleIDConflicts)
-				r.Delete("/api/id-conflicts/{rid}", s.handleIDConflictDelete)
-			})
-		})
-
-		// 管理后台 SPA 静态资源
-		web.MountAdmin(r)
-	})
-
-	// ---------- RustDesk Web 控制端（/webui） ----------
+	// RustDesk Web 控制端（/webui，可选）
 	web.MountWebClient(r, s.cfg)
 
 	return r
